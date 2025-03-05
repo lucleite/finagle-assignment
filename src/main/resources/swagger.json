@@ -1,0 +1,273 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Marvel Characters API",
+    "version": "1.0.0",
+    "description": "API to fetch Marvel characters based on name, comic year, and sorting order."
+  },
+  "paths": {
+    "/v1/marvel-characters": {
+      "get": {
+        "summary": "Retrieve Marvel characters",
+        "description": "Fetch Marvel characters by name, with optional filters for comic year and sorting order.",
+        "operationId": "getMarvelCharacters",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "description": "The Marvel character's name (Required).",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "comicYear",
+            "in": "query",
+            "description": "Filter by comics' release year (Optional, defaults to last 10 years).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "orderBy",
+            "in": "query",
+            "description": "Sorting order (Optional, default: 'title', can also be 'issueNumber').",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["title", "issueNumber"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response with Marvel character data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarvelCharacterResponseWrapper"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request due to invalid parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - Errors from Marvel API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarvelApiErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error - Unexpected issue retrieving Marvel character data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "MarvelCharacterResponseWrapper": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "Response status, either 'Successful' or 'Error'."
+          },
+          "statusCode": {
+            "type": "integer",
+            "description": "HTTP status code."
+          },
+          "errors": {
+            "type": "array",
+            "description": "List of error messages (if any).",
+            "items": {
+              "type": "string"
+            }
+          },
+          "payload": {
+            "$ref": "#/components/schemas/MarvelCharacterResponse"
+          }
+        }
+      },
+      "MarvelCharacterResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "List of Marvel characters with their associated comics.",
+            "items": {
+              "$ref": "#/components/schemas/MarvelCharacterResponseData"
+            }
+          }
+        }
+      },
+      "MarvelCharacterResponseData": {
+        "type": "object",
+        "properties": {
+          "character": {
+            "$ref": "#/components/schemas/MarvelCharacter"
+          },
+          "comics": {
+            "type": "array",
+            "description": "List of comics associated with the character.",
+            "items": {
+              "$ref": "#/components/schemas/MarvelCharacterComic"
+            }
+          }
+        }
+      },
+      "MarvelCharacter": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Unique identifier for the Marvel character."
+          },
+          "name": {
+            "type": "string",
+            "description": "Character name."
+          },
+          "description": {
+            "type": "string",
+            "description": "Short description of the character."
+          },
+          "thumbnail": {
+            "type": "string",
+            "description": "URL to the character's image."
+          }
+        }
+      },
+      "MarvelCharacterComic": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Title of the comic."
+          },
+          "issueNumber": {
+            "type": "integer",
+            "description": "Issue number of the comic."
+          },
+          "releaseYear": {
+            "type": "integer",
+            "description": "Year the comic was released."
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "Error"
+          },
+          "code": {
+            "type": "integer",
+            "example": 400
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": ["Invalid name parameter", "comicYear must be a valid integer"]
+          }
+        }
+      },
+      "MarvelApiErrorResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "Error"
+          },
+          "code": {
+            "type": "integer",
+            "example": 409
+          },
+          "errors": {
+            "type": "array",
+            "description": "List of possible errors returned by Marvel API",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 409
+                },
+                "reason": {
+                  "type": "string",
+                  "description": "Error description."
+                },
+                "_id": {
+                  "type": "string",
+                  "description": "Marvel API internal error ID."
+                }
+              }
+            },
+            "example": [
+              {
+                "code": 409,
+                "reason": "Limit greater than 100.",
+                "_id": "536cede2b44b7e6d2000005d"
+              },
+              {
+                "code": 409,
+                "reason": "Limit invalid or below 1.",
+                "_id": "536cede2b44b7e6d2000005c"
+              },
+              {
+                "code": 409,
+                "reason": "Invalid or unrecognized parameter.",
+                "_id": "536cede2b44b7e6d2000005b"
+              },
+              {
+                "code": 409,
+                "reason": "Empty parameter.",
+                "_id": "536cede2b44b7e6d2000005a"
+              },
+              {
+                "code": 409,
+                "reason": "Invalid or unrecognized ordering parameter.",
+                "_id": "536cede2b44b7e6d20000059"
+              },
+              {
+                "code": 409,
+                "reason": "Too many values sent to a multi-value list filter.",
+                "_id": "536cede2b44b7e6d20000058"
+              },
+              {
+                "code": 409,
+                "reason": "Invalid value passed to filter.",
+                "_id": "536cede2b44b7e6d20000057"
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
